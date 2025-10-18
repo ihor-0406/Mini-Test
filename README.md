@@ -15,7 +15,7 @@ docker logs -f data-api
 docker compose down
 
 
-# ===================1) Реєстрація та логін (отримуємо токен)==================================
+# 1) Реєстрація та логін (отримуємо токен)
 
 curl -s -X POST http://localhost:8080/api/auth/register \
 -H "Content-Type: application/json" \
@@ -26,7 +26,7 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
 -d '{"email":"a@a.com","password":"pass"}' | jq -r .token)
 echo $TOKEN
 
-# 2) =================Сквозний виклик через auth-api -> data-api=================================
+# 2) Сквозний виклик через auth-api -> data-api
 
 curl -s -X POST http://localhost:8080/api/process \
 -H "Authorization: Bearer $TOKEN" \
@@ -34,11 +34,23 @@ curl -s -X POST http://localhost:8080/api/process \
 -d '{"text":"hello"}'
 # очікувано: OLLEH
 
-# 3)=====================Прямий виклик data-api (для відладки)==================================
+# 3)Прямий виклик data-api (для відладки)
 
 curl -s -X POST http://localhost:8081/api/transform \
 -H "X-Internal-Token: dev-secret" \
 -H "Content-Type: application/json" \
 -d '{"text":"hello"}'
 # очікувано: OLLEH
+
+
+# Змінні середовища (.env)
+
+У корені лежить .env. Типові значення:
+
+POSTGRES_DB=pgmini
+POSTGRES_USER=pguser
+POSTGRES_PASSWORD=pgpass
+
+INTERNAL_TOKEN=dev-secret
+DATA_API_URL=http://data-api:8081/api/transform
 
