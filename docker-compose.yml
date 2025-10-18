@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg-mini
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d authdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  data-api:
+    build:
+      context: ./data-api
+      dockerfile: Dockerfile
+    container_name: data-api
+    environment:
+      SERVER_PORT: 8081
+      INTERNAL_TOKEN: dev-secret
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_started
+
+  auth-api:
+    build:
+      context: ./auth-api
+    container_name: auth-api
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      JWT_SECRET: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      INTERNAL_TOKEN: dev-secret
+      DATA_API_URL: http://data-api:8081/api/transform
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      data-api:
+        condition: service_started
+
+volumes:
+  pgdata:
